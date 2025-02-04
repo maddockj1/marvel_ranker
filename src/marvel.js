@@ -82,7 +82,7 @@ export default function MovieComparison() {
 
       setSortingStack([...newStack, ...sortedLower, ...sortedHigher]);
     }
-  }, [sortingStack]);
+  }, [sortingStack, finalRankings.length]);
 
   function handleVote(isHigher) {
     setSortingStack(prev => {
