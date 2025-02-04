@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/marvel_ranker/static/css/main.f855e6bc.css",
+    "main.js": "/marvel_ranker/static/js/main.5b0e3e9e.js",
+    "static/js/453.1a9d22ab.chunk.js": "/marvel_ranker/static/js/453.1a9d22ab.chunk.js",
+    "index.html": "/marvel_ranker/index.html",
+    "main.f855e6bc.css.map": "/marvel_ranker/static/css/main.f855e6bc.css.map",
+    "main.5b0e3e9e.js.map": "/marvel_ranker/static/js/main.5b0e3e9e.js.map",
+    "453.1a9d22ab.chunk.js.map": "/marvel_ranker/static/js/453.1a9d22ab.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f855e6bc.css",
+    "static/js/main.5b0e3e9e.js"
+  ]
+}
