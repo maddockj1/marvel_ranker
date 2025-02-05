@@ -51,23 +51,29 @@ export default function MovieComparison() {
     );
 
     if (remainingToCompare.length > 0) {
+      // Randomly select an item from remaining comparisons
+      const randomIndex = Math.floor(Math.random() * remainingToCompare.length);
+      const randomComparison = remainingToCompare[randomIndex];
+      
+      // Randomly decide if pivot should be on left or right
+      const shouldSwap = Math.random() > 0.5;
       setCurrentComparison({
-        pivot: currentSort.pivot,
-        comparing: remainingToCompare[0]
+        pivot: shouldSwap ? randomComparison : currentSort.pivot,
+        comparing: shouldSwap ? currentSort.pivot : randomComparison
       });
     } else {
       // Partition complete, recursively sort sublists
       const newStack = sortingStack.slice(0, -1);
       const sortedLower = currentSort.lower.length > 1 ? [{
         array: currentSort.lower,
-        pivot: currentSort.lower[0],
+        pivot: currentSort.lower[Math.floor(Math.random() * currentSort.lower.length)], // Random pivot
         compared: [],
         higher: [],
         lower: []
       }] : [];
       const sortedHigher = currentSort.higher.length > 1 ? [{
         array: currentSort.higher,
-        pivot: currentSort.higher[0],
+        pivot: currentSort.higher[Math.floor(Math.random() * currentSort.higher.length)], // Random pivot
         compared: [],
         higher: [],
         lower: []
@@ -91,13 +97,16 @@ export default function MovieComparison() {
         item !== current.pivot && !current.compared.includes(item)
       );
 
+      // Adjust the vote based on whether we swapped the presentation order
+      const actualIsHigher = currentComparison.pivot === comparing ? !isHigher : isHigher;
+
       return [
         ...prev.slice(0, -1),
         {
           ...current,
           compared: [...current.compared, comparing],
-          higher: isHigher ? [...current.higher, comparing] : current.higher,
-          lower: !isHigher ? [...current.lower, comparing] : current.lower
+          higher: actualIsHigher ? [...current.higher, comparing] : current.higher,
+          lower: !actualIsHigher ? [...current.lower, comparing] : current.lower
         }
       ];
     });
@@ -108,17 +117,44 @@ export default function MovieComparison() {
   }
 
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
+    <div style={{ 
+      textAlign: "center", 
+      padding: "20px",
+      backgroundColor: "#1a1a1a",
+      color: "white",
+      minHeight: "100vh"
+    }}>
       <h1>Marvel Cinematic Universe Ranking</h1>
       
       <div style={{ marginBottom: "20px" }}>
-        <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ marginRight: "10px" }}>
+        <select 
+          value={filter} 
+          onChange={(e) => setFilter(e.target.value)} 
+          style={{ 
+            marginRight: "10px",
+            backgroundColor: "#333",
+            color: "white",
+            padding: "5px",
+            border: "1px solid #444",
+            borderRadius: "4px"
+          }}
+        >
           <option value="all">All Content</option>
           <option value="movie">Movies Only</option>
           <option value="tv">TV Shows Only</option>
         </select>
 
-        <select value={phase} onChange={(e) => setPhase(e.target.value)}>
+        <select 
+          value={phase} 
+          onChange={(e) => setPhase(e.target.value)}
+          style={{ 
+            backgroundColor: "#333",
+            color: "white",
+            padding: "5px",
+            border: "1px solid #444",
+            borderRadius: "4px"
+          }}
+        >
           <option value="all">All Phases</option>
           <option value="1">Phase 1</option>
           <option value="2">Phase 2</option>
@@ -130,7 +166,7 @@ export default function MovieComparison() {
 
       {!isComplete ? (
         <>
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "20px", color: "#fff" }}>
             Which do you prefer?
           </div>
           <div style={{ display: "flex", justifyContent: "center", gap: "40px", margin: "20px 0" }}>
@@ -138,7 +174,14 @@ export default function MovieComparison() {
               <div 
                 key={item.id}
                 onClick={() => handleVote(item === currentComparison.comparing)}
-                style={{ cursor: "pointer", maxWidth: "300px" }}
+                style={{ 
+                  cursor: "pointer", 
+                  maxWidth: "300px",
+                  backgroundColor: "#333",
+                  padding: "15px",
+                  borderRadius: "15px",
+                  transition: "transform 0.2s, box-shadow 0.2s"
+                }}
               >
                 <img 
                   src={item.poster}
@@ -148,20 +191,26 @@ export default function MovieComparison() {
                     height: "300px",
                     borderRadius: "10px",
                     transition: "transform 0.2s",
-                    boxShadow: "0 4px 8px rgba(0,0,0,0.1)"
+                    boxShadow: "0 4px 8px rgba(0,0,0,0.3)"
                   }}
-                  onMouseOver={(e) => e.currentTarget.style.transform = "scale(1.05)"}
-                  onMouseOut={(e) => e.currentTarget.style.transform = "scale(1)"}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.parentElement.style.boxShadow = "0 6px 12px rgba(0,0,0,0.4)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.parentElement.style.boxShadow = "none";
+                  }}
                 />
-                <h3>{item.title}</h3>
-                <p>({item.year}) - Phase {item.phase}</p>
-                <p>{item.type === "tv" ? "TV Series" : "Movie"}</p>
+                <h3 style={{ color: "#fff", marginTop: "10px" }}>{item.title}</h3>
+                <p style={{ color: "#ccc" }}>({item.year}) - Phase {item.phase}</p>
+                <p style={{ color: "#ccc" }}>{item.type === "tv" ? "TV Series" : "Movie"}</p>
               </div>
             ))}
           </div>
         </>
       ) : (
-        <h2>Final Rankings</h2>
+        <h2 style={{ color: "#fff" }}>Final Rankings</h2>
       )}
 
       <ul style={{ listStyle: "none", padding: 0, maxWidth: "500px", margin: "0 auto" }}>
@@ -171,11 +220,12 @@ export default function MovieComparison() {
             style={{
               padding: "8px",
               margin: "4px 0",
-              backgroundColor: index === 0 ? "#ffd700" : 
-                             index === 1 ? "#c0c0c0" : 
-                             index === 2 ? "#cd7f32" : 
-                             "transparent",
-              borderRadius: "4px"
+              backgroundColor: index === 0 ? "rgba(255, 215, 0, 0.2)" : 
+                             index === 1 ? "rgba(192, 192, 192, 0.2)" : 
+                             index === 2 ? "rgba(205, 127, 50, 0.2)" : 
+                             "#333",
+              borderRadius: "4px",
+              color: "#fff"
             }}
           >
             {index + 1}. {item.title}
