@@ -94,7 +94,7 @@
       "year": 2015,
       "phase": 2,
       "type": "movie",
-      "poster": "https://image.tmdb.org/t/p/w500/D6e8RJf2qUstnfkTslTXNTUAlT.jpg"
+      "poster": "https://image.tmdb.org/t/p/w500/rS97hUJ1otKZzldS7vFtVeXzGvP.jpg"
     },
     {
       "id": 13,
@@ -322,6 +322,22 @@
     },
     {
       "id": 41,
+      "title": "Werewolf by Night",
+      "year": 2022,
+      "phase": 4,
+      "type": "tv",
+      "poster": "https://image.tmdb.org/t/p/w500/bqBGQUV1IsLP1zXwMxwgXwYfNG2.jpg"
+    },
+    {
+      "id": 42,
+      "title": "Echo",
+      "year": 2024,
+      "phase": 5,
+      "type": "tv",
+      "poster": "https://image.tmdb.org/t/p/w500/vFyJH630cF68LohVYjQW49074Sy.jpg"
+    },
+    {
+      "id": 43,
       "title": "Guardians of the Galaxy Vol. 3",
       "year": 2023,
       "phase": 5,
@@ -329,7 +345,7 @@
       "poster": "https://image.tmdb.org/t/p/w500/r2J02Z2OpNTctfOSN1Ydgii51I3.jpg"
     },
     {
-      "id": 42,
+      "id": 44,
       "title": "The Marvels",
       "year": 2023,
       "phase": 5,

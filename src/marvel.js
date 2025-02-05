@@ -5,12 +5,14 @@ export default function MovieComparison() {
   const [filter, setFilter] = useState("all"); // "all", "movie", "tv"
   const [phase, setPhase] = useState("all"); // "all", "1", "2", "3", "4", "5"
   const [movies, setMovies] = useState([]);
-  const [currentComparison, setCurrentComparison] = useState(null);
-  const [sortingStack, setSortingStack] = useState([]);
+  const [currentPair, setCurrentPair] = useState(null);
+  const [lists, setLists] = useState([]); // Array of sorted sublists
   const [isComplete, setIsComplete] = useState(false);
   const [finalRankings, setFinalRankings] = useState([]);
+  const [totalComparisons, setTotalComparisons] = useState(0);
+  const [completedComparisons, setCompletedComparisons] = useState(0);
 
-  // Initialize sorting when filter/phase changes
+  // Initialize when filter/phase changes
   useEffect(() => {
     const filteredMovies = moviesData.movies.filter(item => {
       const typeMatch = filter === "all" || item.type === filter;
@@ -18,101 +20,92 @@ export default function MovieComparison() {
       return typeMatch && phaseMatch;
     });
 
-    // Shuffle movies for initial randomization
-    const shuffledMovies = [...filteredMovies].sort(() => Math.random() - 0.5);
-    setMovies(shuffledMovies);
+    // Create initial lists of size 1
+    const initialLists = filteredMovies
+      .sort(() => Math.random() - 0.5) // Shuffle initially
+      .map(movie => [movie]);
     
-    // Initialize sorting with full array
-    if (shuffledMovies.length > 0) {
-      setSortingStack([{ 
-        array: shuffledMovies,
-        pivot: shuffledMovies[0],
-        compared: [],
-        higher: [],
-        lower: []
-      }]);
-    }
+    setLists(initialLists);
+    setMovies(filteredMovies);
     setIsComplete(false);
     setFinalRankings([]);
+    setTotalComparisons(Math.ceil(filteredMovies.length * Math.log2(filteredMovies.length)));
+    setCompletedComparisons(0);
   }, [filter, phase]);
 
-  // Process sorting stack
+  // Process lists
   useEffect(() => {
-    if (sortingStack.length === 0) {
-      if (finalRankings.length > 0) {
-        setIsComplete(true);
-      }
+    if (lists.length === 0) return;
+    
+    if (lists.length === 1) {
+      setFinalRankings(lists[0]);
+      setIsComplete(true);
       return;
     }
 
-    const currentSort = sortingStack[sortingStack.length - 1];
-    const remainingToCompare = currentSort.array.filter(item => 
-      item !== currentSort.pivot && !currentSort.compared.includes(item)
-    );
+    // If we have an odd number of lists, keep the last one for next round
+    const evenLists = lists.length % 2 === 0 ? lists : lists.slice(0, -1);
+    const remainingList = lists.length % 2 === 0 ? [] : [lists[lists.length - 1]];
 
-    if (remainingToCompare.length > 0) {
-      // Randomly select an item from remaining comparisons
-      const randomIndex = Math.floor(Math.random() * remainingToCompare.length);
-      const randomComparison = remainingToCompare[randomIndex];
-      
-      // Randomly decide if pivot should be on left or right
-      const shouldSwap = Math.random() > 0.5;
-      setCurrentComparison({
-        pivot: shouldSwap ? randomComparison : currentSort.pivot,
-        comparing: shouldSwap ? currentSort.pivot : randomComparison
+    // Find two lists to merge
+    const list1 = evenLists[0];
+    const list2 = evenLists[1];
+
+    if (!currentPair && list1 && list2) {
+      // Start comparing from the tops of both lists
+      setCurrentPair({
+        item1: list1[0],
+        item2: list2[0],
+        list1: list1,
+        list2: list2,
+        merged: [],
+        remainingLists: evenLists.slice(2).concat(remainingList)
       });
-    } else {
-      // Partition complete, recursively sort sublists
-      const newStack = sortingStack.slice(0, -1);
-      const sortedLower = currentSort.lower.length > 1 ? [{
-        array: currentSort.lower,
-        pivot: currentSort.lower[Math.floor(Math.random() * currentSort.lower.length)], // Random pivot
-        compared: [],
-        higher: [],
-        lower: []
-      }] : [];
-      const sortedHigher = currentSort.higher.length > 1 ? [{
-        array: currentSort.higher,
-        pivot: currentSort.higher[Math.floor(Math.random() * currentSort.higher.length)], // Random pivot
-        compared: [],
-        higher: [],
-        lower: []
-      }] : [];
-
-      setFinalRankings(prev => {
-        if (currentSort.lower.length <= 1 && currentSort.higher.length <= 1) {
-          return [...prev, ...currentSort.lower, currentSort.pivot, ...currentSort.higher];
-        }
-        return prev;
-      });
-
-      setSortingStack([...newStack, ...sortedLower, ...sortedHigher]);
     }
-  }, [sortingStack, finalRankings.length]);
+  }, [lists, currentPair]);
 
-  function handleVote(isHigher) {
-    setSortingStack(prev => {
-      const current = prev[prev.length - 1];
-      const comparing = current.array.find(item => 
-        item !== current.pivot && !current.compared.includes(item)
-      );
+  function handleVote(preferFirst) {
+    if (!currentPair) return;
 
-      // Adjust the vote based on whether we swapped the presentation order
-      const actualIsHigher = currentComparison.pivot === comparing ? !isHigher : isHigher;
+    setCompletedComparisons(prev => prev + 1);
 
-      return [
-        ...prev.slice(0, -1),
-        {
-          ...current,
-          compared: [...current.compared, comparing],
-          higher: actualIsHigher ? [...current.higher, comparing] : current.higher,
-          lower: !actualIsHigher ? [...current.lower, comparing] : current.lower
-        }
-      ];
-    });
+    const { item1, item2, list1, list2, merged, remainingLists } = currentPair;
+    const newMerged = [...merged, preferFirst ? item1 : item2];
+    const newList1 = preferFirst ? list1.slice(1) : list1;
+    const newList2 = preferFirst ? list2 : list2.slice(1);
+
+    if (newList1.length === 0) {
+      // List1 is empty, add remaining items from list2
+      const completedMerge = [...newMerged, ...newList2];
+      if (remainingLists.length === 0) {
+        setLists([completedMerge]);
+      } else {
+        setLists([completedMerge, ...remainingLists]);
+      }
+      setCurrentPair(null);
+    } else if (newList2.length === 0) {
+      // List2 is empty, add remaining items from list1
+      const completedMerge = [...newMerged, ...newList1];
+      if (remainingLists.length === 0) {
+        setLists([completedMerge]);
+      } else {
+        setLists([completedMerge, ...remainingLists]);
+      }
+      setCurrentPair(null);
+    } else {
+      // Continue merging
+      setCurrentPair({
+        item1: newList1[0],
+        item2: newList2[0],
+        list1: newList1,
+        list2: newList2,
+        merged: newMerged,
+        remainingLists
+      });
+    }
   }
 
-  if (!currentComparison && !isComplete) {
+  if (!currentPair && !isComplete) {
     return <div>Loading...</div>;
   }
 
@@ -169,11 +162,41 @@ export default function MovieComparison() {
           <div style={{ marginBottom: "20px", color: "#fff" }}>
             Which do you prefer?
           </div>
+
+          {/* Progress Bar */}
+          <div style={{ 
+            maxWidth: "500px", 
+            margin: "0 auto 20px auto",
+            padding: "10px"
+          }}>
+            <div style={{ 
+              marginBottom: "10px",
+              color: "#ccc",
+              fontSize: "14px"
+            }}>
+              Remaining Comparisons: {totalComparisons - completedComparisons}
+            </div>
+            <div style={{
+              width: "100%",
+              height: "10px",
+              backgroundColor: "#333",
+              borderRadius: "5px",
+              overflow: "hidden"
+            }}>
+              <div style={{
+                width: `${(completedComparisons / totalComparisons) * 100}%`,
+                height: "100%",
+                backgroundColor: "#e62429",
+                transition: "width 0.3s ease-in-out"
+              }} />
+            </div>
+          </div>
+
           <div style={{ display: "flex", justifyContent: "center", gap: "40px", margin: "20px 0" }}>
-            {[currentComparison.pivot, currentComparison.comparing].map((item) => (
+            {[currentPair.item1, currentPair.item2].map((item) => (
               <div 
                 key={item.id}
-                onClick={() => handleVote(item === currentComparison.comparing)}
+                onClick={() => handleVote(item === currentPair.item1)}
                 style={{ 
                   cursor: "pointer", 
                   maxWidth: "300px",
@@ -210,28 +233,46 @@ export default function MovieComparison() {
           </div>
         </>
       ) : (
-        <h2 style={{ color: "#fff" }}>Final Rankings</h2>
+        <>
+          <h2 style={{ color: "#fff", marginBottom: "30px" }}>Final Rankings</h2>
+          <ul style={{ listStyle: "none", padding: 0, maxWidth: "500px", margin: "0 auto" }}>
+            {finalRankings.map((item, index) => (
+              <li 
+                key={item.title}
+                style={{
+                  padding: "12px",
+                  margin: "8px 0",
+                  backgroundColor: index === 0 ? "rgba(255, 215, 0, 0.2)" : 
+                                 index === 1 ? "rgba(192, 192, 192, 0.2)" : 
+                                 index === 2 ? "rgba(205, 127, 50, 0.2)" : 
+                                 "#333",
+                  borderRadius: "4px",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "15px"
+                }}
+              >
+                <img 
+                  src={item.poster}
+                  alt={item.title}
+                  style={{
+                    width: "40px",
+                    height: "60px",
+                    borderRadius: "4px"
+                  }}
+                />
+                <div style={{ textAlign: "left", flex: 1 }}>
+                  <div>{index + 1}. {item.title}</div>
+                  <div style={{ fontSize: "0.8em", color: "#ccc" }}>
+                    {item.year} - Phase {item.phase} - {item.type === "tv" ? "TV Series" : "Movie"}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
-
-      <ul style={{ listStyle: "none", padding: 0, maxWidth: "500px", margin: "0 auto" }}>
-        {finalRankings.map((item, index) => (
-          <li 
-            key={item.title}
-            style={{
-              padding: "8px",
-              margin: "4px 0",
-              backgroundColor: index === 0 ? "rgba(255, 215, 0, 0.2)" : 
-                             index === 1 ? "rgba(192, 192, 192, 0.2)" : 
-                             index === 2 ? "rgba(205, 127, 50, 0.2)" : 
-                             "#333",
-              borderRadius: "4px",
-              color: "#fff"
-            }}
-          >
-            {index + 1}. {item.title}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
